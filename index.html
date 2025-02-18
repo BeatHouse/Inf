@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPS & WPM Tester - Admin Enabled</title>
+    <style>
+        /* Tailwind-like styling */
+        body {
+            display: flex;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #1f2937;
+            color: white;
+        }
+        #sidebar {
+            width: 250px;
+            background-color: #111827;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        #main-content {
+            flex: 1;
+            padding: 20px;
+        }
+        h1, h2 {
+            background: linear-gradient(90deg, red, orange, yellow, green, cyan, blue, violet);
+            -webkit-background-clip: text;
+            color: transparent;
+            animation: rainbow 3s linear infinite;
+        }
+        @keyframes rainbow {
+            0% { background-position: 0%; }
+            100% { background-position: 100%; }
+        }
+        .section {
+            background-color: #374151;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            max-width: 600px;
+            width: 100%;
+        }
+        .button {
+            background-color: #ec4899;
+            background-image: linear-gradient(45deg, #ec4899, #f59e0b);
+            padding: 10px 20px;
+            color: white;
+            font-size: 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .button:active {
+            background-color: #f59e0b;
+        }
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 10px;
+            font-size: 1rem;
+            border-radius: 5px;
+        }
+        /* Sidebar styling */
+        .side-option {
+            margin: 10px 0;
+        }
+        .side-option label {
+            font-size: 1rem;
+            display: block;
+        }
+        .side-option input {
+            width: 100%;
+            padding: 5px;
+            font-size: 1rem;
+        }
+        /* Admin Panel styling */
+        #admin-panel {
+            display: none;
+            background-color: #2d3748;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        .admin-option {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Sidebar -->
+    <div id="sidebar">
+        <h2>Options</h2>
+        <div class="side-option">
+            <label for="cps-timer-input">CPS Timer (seconds):</label>
+            <input type="number" id="cps-timer-input" value="5" min="1">
+        </div>
+        <div class="side-option">
+            <label for="wpm-timer-input">WPM Timer (seconds):</label>
+            <input type="number" id="wpm-timer-input" value="60" min="10">
+        </div>
+        <button class="button" id="admin-button">Open Admin Panel</button>
+    </div>
+
+    <!-- Main Content -->
+    <div id="main-content">
+        <!-- Header -->
+        <header>
+            <h1>CPS & WPM Tester</h1>
+            <p>Test your Clicks Per Second (CPS) and Words Per Minute (WPM) with style!</p>
+        </header>
+
+        <!-- CPS Section -->
+        <div class="section" id="cps-section">
+            <h2>CPS Test</h2>
+            <p>Click in the space below as fast as you can!</p>
+            <div id="click-area" style="height: 150px; background-color: #2d3748; margin: 20px 0; cursor: pointer;"></div>
+            <div class="results">
+                <p id="cps-timer">Time Left: 5s</p>
+                <p id="cps-score">CPS: 0</p>
+            </div>
+            <button class="button" id="start-cps-button">Start CPS Test</button>
+        </div>
+
+        <!-- WPM Section -->
+        <div class="section" id="wpm-section">
+            <h2>WPM Test</h2>
+            <p>Type the text below as fast as you can!</p>
+            <textarea id="wpm-text" placeholder="Start typing..." disabled></textarea>
+            <p id="sample-text">The quick brown fox jumps over the lazy dog.</p>
+            <div class="results">
+                <p id="wpm-timer">Time Left: 60s</p>
+                <p id="wpm-score">WPM: 0</p>
+            </div>
+            <button class="button" id="start-wpm-button">Start WPM Test</button>
+        </div>
+
+        <!-- Admin Panel -->
+        <div id="admin-panel">
+            <h2>Admin Panel</h2>
+            <p>Manage test settings and view user performance data.</p>
+
+            <div class="admin-option">
+                <button class="button" id="reset-scores-button">Reset High Scores</button>
+            </div>
+
+            <div class="admin-option">
+                <button class="button" id="disable-tests-button">Disable Tests</button>
+                <button class="button" id="enable-tests-button">Enable Tests</button>
+            </div>
+
+            <h3>High Scores</h3>
+            <p id="high-scores">CPS: N/A, WPM: N/A</p>
+        </div>
+    </div>
+
+    <script>
+        // CPS Test Variables
+        let cpsClicks = 0;
+        let cpsTimeLeft;
+        let cpsInterval;
+        let cpsTimerInput = document.getElementById("cps-timer-input");
+        let highCpsScore = 0;
+
+        const clickArea = document.getElementById("click-area");
+        const cpsTimerDisplay = document.getElementById("cps-timer");
+        const cpsScoreDisplay = document.getElementById("cps-score");
+        const startCpsButton = document.getElementById("start-cps-button");
+
+        // WPM Test Variables
+        let wpmTimer;
+        let wpmInterval;
+        const wpmTextArea = document.getElementById("wpm-text");
+        const wpmSampleText = document.getElementById("sample-text").textContent;
+        const wpmTimerDisplay = document.getElementById("wpm-timer");
+        const wpmScoreDisplay = document.getElementById("wpm-score");
+        const startWpmButton = document.getElementById("start-wpm-button");
+        const wpmTimerInput = document.getElementById("wpm-timer-input");
+        let highWpmScore = 0;
+
+        // Admin Panel Variables
+        const adminPanel = document.getElementById("admin-panel");
+        const adminButton = document.getElementById("admin-button");
+        const highScoresDisplay = document.getElementById("high-scores");
+        const resetScoresButton = document.getElementById("reset-scores-button");
+        const disableTestsButton = document.getElementById("disable-tests-button");
+        const enableTestsButton = document.getElementById("enable-tests-button");
+
+        // CPS Test Functionality
+        clickArea.addEventListener("click", () => {
+            if (cpsTimeLeft > 0) {
+                cpsClicks++;
+            }
+        });
+
+        startCpsButton.addEventListener("click", () => {
+            cpsClicks = 0;
+            cpsTimeLeft = parseInt(cpsTimerInput.value, 10);
+            cpsTimerDisplay.textContent = `Time Left: ${cpsTimeLeft}s`;
+            cpsScoreDisplay.textContent = "CPS: 0";
+            startCpsButton.disabled = true;
+            cpsInterval = setInterval(() => {
+                cpsTimeLeft--;
+                cpsTimerDisplay.textContent = `Time Left: ${cpsTimeLeft}s`;
+                if (cpsTimeLeft === 0) {
+                    clearInterval(cpsInterval);
+                    const cpsScore = (cpsClicks / parseInt(cpsTimerInput.value, 10)).toFixed(2);
+                    cpsScoreDisplay.textContent = `CPS: ${cpsScore}`;
+                    if (cpsScore > highCpsScore) {
+                        highCpsScore = cpsScore;
+                    }
+                    updateHighScores();
+                    startCpsButton.disabled = false;
+                }
+            }, 1000);
+        });
+
+        // WPM Test Functionality
+        startWpmButton.addEventListener("click", () => {
+            wpmTextArea.disabled = false;
+            wpmTextArea.value = '';
+            wpmTimer = parseInt(wpmTimerInput.value, 10);
+            wpmTimerDisplay.textContent = `Time Left: ${wpmTimer}s`;
+            wpmScoreDisplay.textContent = "WPM: 0";
+            startWpmButton.disabled = true;
+            wpmInterval = setInterval(() => {
+                wpmTimer--;
+                wpmTimerDisplay.textContent = `Time Left: ${wpmTimer}s`;
+                if (wpmTimer === 0) {
+                    clearInterval(wpmInterval);
+                    calculateWPM();
+                    wpmTextArea.disabled = true;
+                    startWpmButton.disabled = false;
+                }
+            }, 1000);
+        });
+
+        function calculateWPM() {
+            const typedWords = wpmTextArea.value.trim().split(/\s+/).length;
+            const correctWords = wpmSampleText.split(/\s+/).filter((word, index) => word === wpmTextArea.value.trim().split(/\s+/)[index]).length;
+            const wpmScore = Math.round((correctWords / parseInt(wpmTimerInput.value, 10)) * 60);
+            wpmScoreDisplay.textContent = `WPM: ${wpmScore} (Correct words only)`;
+            if (wpmScore > highWpmScore) {
+                highWpmScore = wpmScore;
+            }
+            updateHighScores();
+        }
+
+        // Update High Scores Display
+        function updateHighScores() {
+            highScoresDisplay.textContent = `CPS: ${highCpsScore}, WPM: ${highWpmScore}`;
+        }
+
+        // Admin Panel Toggle
+        adminButton.addEventListener("click", () => {
+            adminPanel.style.display = adminPanel.style.display === "none" ? "block" : "none";
+        });
+
+        // Reset High Scores
+        resetScoresButton.addEventListener("click", () => {
+            highCpsScore = 0;
+            highWpmScore = 0;
+            updateHighScores();
+        });
+
+        // Disable Tests
+        disableTestsButton.addEventListener("click", () => {
+            startCpsButton.disabled = true;
+            startWpmButton.disabled = true;
+        });
+
+        // Enable Tests
+        enableTestsButton.addEventListener("click", () => {
+            startCpsButton.disabled = false;
+            startWpmButton.disabled = false;
+        });
+    </script>
+</body>
+</html>
